@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "685763060338",
+    "project_id": "eventplanner-20348",
+    "storage_bucket": "eventplanner-20348.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:685763060338:android:8d436ddad0af4ab3be98eb",
+        "android_client_info": {
+          "package_name": "rpr.events"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "685763060338-onrt7d4vov20ep9tdomdsvlvg4hegnq4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "rpr.events",
+            "certificate_hash": "29f67a492ec76a68cb9b8eab24489ee6726af420"
+          }
+        },
+        {
+          "client_id": "685763060338-5j4c27ot423a0hptse01m22psgbakpoj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWKQe1qJGcd0pPNr_2XhFTwWo_KsEAlkY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "685763060338-5j4c27ot423a0hptse01m22psgbakpoj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
