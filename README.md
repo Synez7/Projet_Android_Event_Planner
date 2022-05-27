@@ -13,5 +13,5 @@ Guide de lancement :
 4 - Vous pourrez à présent profiter des fonctionnalités offertes par cette application
 
 
-Le fichier APK pour cette application est fournie d'ailleurs, si vous souhaitez l'essayer directement depuis votre terminal mobile
+Le fichier APK pour cette application est fourni d'ailleurs, si vous souhaitez l'essayer directement depuis votre terminal mobile
 
