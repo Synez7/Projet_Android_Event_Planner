@@ -1,10 +1,10 @@
 # Projet_Android_Event_Planner
-Projet Android dans le cadre de l'UE Programmation Mobile
+## Projet Android dans le cadre de l'UE Programmation Mobile ##
 
 
 Guide de lancement :
 
-1 - Télécharger l'archive zip à cette adresse courante 
+1 - Téléchargez l'archive zip à cette adresse courante 
 
 2 - Ouvrez l'IDE Android Studio depuis votre environnement (Windows / Linux / Mac OS X)
 
