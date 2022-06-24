@@ -1,8 +1,6 @@
 # Projet_Android_Event_Planner
-## Projet Android dans le cadre de l'UE Programmation Mobile ##
 
-
-Guide de lancement :
+<ins>Guide de lancement :</ins>
 
 1 - Téléchargez l'archive zip à cette adresse courante 
 
