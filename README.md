@@ -4,7 +4,7 @@
 
 1 - Téléchargez l'archive zip à cette adresse courante 
 
-2 - Ouvrez le dossier ## eventsapp-master avec l'IDE Android Studio depuis votre environnement (Windows / Linux / Mac OS X)
+2 - Ouvrez le dossier **eventsapp-master/** avec l'IDE Android Studio depuis votre environnement (Windows / Linux / Mac OS X)
 
 3 - Créer un AVD et choisissez de préférence Pixel 5 avec l'API Lollipop 22 d'Android
 
