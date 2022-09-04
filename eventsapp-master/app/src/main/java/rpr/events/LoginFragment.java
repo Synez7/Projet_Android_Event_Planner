@@ -140,9 +140,11 @@ public class LoginFragment extends Fragment {
                                                 edit.commit();
                                                 edit.putString(getString(R.string.firebase_token),t);
                                                 edit.commit();
+                                                System.out.println("GEN TOKEN : " + t);
                                             }
                                         });
                                         final String token = sharedPreferences.getString(getString(R.string.firebase_token),"token");
+                                        System.out.println("MON TOKEN EST : " + token);
                                         StringRequest fcmRequest = new StringRequest(Request.Method.POST, "https://eventplannerapp.000webhostapp.com/updateFCMtoken.php", new Response.Listener<String>() {
                                             @Override
                                             public void onResponse(String response) {

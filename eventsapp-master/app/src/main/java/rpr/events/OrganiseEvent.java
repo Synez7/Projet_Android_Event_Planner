@@ -1,8 +1,9 @@
 package rpr.events;
 
-import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import android.app.ProgressDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -10,9 +11,11 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Base64;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,10 +29,13 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.android.volley.Request;
@@ -38,12 +44,19 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -53,6 +66,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 
 // Fragment pour la création d'événements
@@ -69,11 +83,6 @@ public class OrganiseEvent extends Fragment {
 
     private static Spinner categorySpinner;
 
-
-    final int REQUEST_CODE_GALLERY = 999;
-
-    public static Uri imgPath;
-
     public static String t;
 
     private static String debutDate;
@@ -85,17 +94,16 @@ public class OrganiseEvent extends Fragment {
     private static boolean overlappingHour;
     private static boolean isAfterOrEqualCurrentDate;
 
+    public static Bitmap imageGal;
+
 
 
     Button btntimepicker, btndatepicker;
     Button btntimepicker2, btndatepicker2;
-    Button btnSelectImage;
 
     ImageView img;
 
-
-    String ImageTag = "image_tag" ;
-    String ImageName = "image_data" ;
+    StorageReference storageReference;
 
 
 
@@ -191,8 +199,6 @@ public class OrganiseEvent extends Fragment {
         });
 
 
-
-
         btndatepicker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -248,7 +254,6 @@ public class OrganiseEvent extends Fragment {
             @Override
             public void onClick(View v) {
                 // Get Current Date
-
                 DatePickerDialog dd = new DatePickerDialog(context,
                         new DatePickerDialog.OnDateSetListener() {
 
@@ -463,12 +468,30 @@ public class OrganiseEvent extends Fragment {
 
                                         if (success) {
 
-
                                             Toast.makeText(context, "Event " + event_name + " was added Successfully ", Toast.LENGTH_SHORT).show();
-                                            UploadImageToServer();
-
-
                                             startActivity(new Intent(getActivity(), Navigation.class));
+
+                                            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                                                System.out.println("CHECK IT OUT");
+                                                NotificationChannel channel = new NotificationChannel("New Event","New Event", NotificationManager.IMPORTANCE_DEFAULT);
+                                                NotificationManager manager = getContext().getSystemService(NotificationManager.class);
+                                                manager.createNotificationChannel(channel);
+
+                                            }
+
+
+                                            NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(),"New Event");
+                                            builder.setContentTitle("New event : " + event_name);
+                                            builder.setContentText(venue + " - " + time);
+                                            builder.setSmallIcon(R.drawable.inverse_logo);
+                                            builder.setColor(ContextCompat.getColor(getContext(),R.color.blueNav));
+                                            builder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
+                                            builder.setAutoCancel(true);
+
+                                            NotificationManagerCompat managerCompat = NotificationManagerCompat.from(getContext());
+                                            managerCompat.notify(1, builder.build());
+
+
 
                                         } else {
 
@@ -563,21 +586,12 @@ public class OrganiseEvent extends Fragment {
                     }
                 });
 
-
-
         queue.add(categoryRequest);
 
     }
 
 
-
-    public Uri getImgURI(){
-        return imgPath;
-    }
-
-
-
-
+    @SuppressLint("WrongConstant")
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -591,6 +605,7 @@ public class OrganiseEvent extends Fragment {
                 Bitmap bitmap = null;
                 try {
                     bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), contentURI);
+                    imageGal = bitmap;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -600,6 +615,19 @@ public class OrganiseEvent extends Fragment {
                 String t = imgPath;
                 img.setImageBitmap(Bitmap.createScaledBitmap(bitmap, 160, 160, false));
 
+                storageReference = FirebaseStorage.getInstance().getReference("images/"+contentURI.toString().split("document/")[1]+".jpg");
+                storageReference.putFile(contentURI).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                        Toast.makeText(getContext(),"Firebase : Uploading successful !",Toast.LENGTH_SHORT).show();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(getContext(),"Firebase : Uploading failure !",Toast.LENGTH_SHORT).show();
+                    }
+                });
 
             }
 
@@ -607,9 +635,20 @@ public class OrganiseEvent extends Fragment {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
             String path = MediaStore.Images.Media.insertImage(getActivity().getContentResolver(), imageBitmap, "title", null);
+            storageReference = FirebaseStorage.getInstance().getReference("camera/"+path.split("images/media/")[1]+".jpg");
+            storageReference.putFile(Uri.parse(path)).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                    Toast.makeText(getContext(),"Firebase : Uploading successful !",Toast.LENGTH_SHORT).show();
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(getContext(),"Firebase : Uploading failure !",Toast.LENGTH_SHORT).show();
+                }
+            });
             System.out.println(" IMG PATH CAMERA : " + path);
-            t = path;
-            String t = path;
 
             img.setImageBitmap(Bitmap.createScaledBitmap(imageBitmap, 160, 160, false));
 
@@ -617,62 +656,13 @@ public class OrganiseEvent extends Fragment {
     }
 
 
-
-
-
-
-
-    public void UploadImageToServer(){
-
-
-        class AsyncTaskUploadClass extends AsyncTask<Void,Void,String> {
-
-            @Override
-            protected void onPreExecute() {
-
-                super.onPreExecute();
-
-               // Toast.makeText(getActivity(),"Image is Uploading Please Wait",Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            protected void onPostExecute(String string1) {
-
-                super.onPostExecute(string1);
-
-                //progressDialog.dismiss();
-
-                Toast.makeText(getActivity(),string1,Toast.LENGTH_LONG).show();
-
-            }
-
-            @Override
-            protected String doInBackground(Void... params) {
-
-                ImageProcessClass imageProcessClass = new ImageProcessClass();
-
-                HashMap<String,String> HashMapParams = new HashMap<String,String>();
-
-
-
-                HashMapParams.put(ImageTag, t);
-
-                HashMapParams.put(ImageName, t);
-
-                String FinalData = imageProcessClass.ImageHttpRequest("https://eventplannerapp.000webhostapp.com/upload-image-to-server.php", HashMapParams);
-
-                return FinalData;
-            }
-        }
-        AsyncTaskUploadClass AsyncTaskUploadClassOBJ = new AsyncTaskUploadClass();
-        AsyncTaskUploadClassOBJ.execute();
-    }
-
-    public void choosePhotoFromGallary() {
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-
-        startActivityForResult(galleryIntent, 1);
+    public void choosePhotoFromGallery() {
+        //Intent galleryIntent = new Intent(Intent.ACTION_PICK,
+          //      MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
+        startActivityForResult(intent, 1);
     }
 
     private void takePhotoFromCamera() {
@@ -692,7 +682,7 @@ public class OrganiseEvent extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case 0:
-                                choosePhotoFromGallary();
+                                choosePhotoFromGallery();
                                 break;
                             case 1:
                                 takePhotoFromCamera();
@@ -702,9 +692,6 @@ public class OrganiseEvent extends Fragment {
                 });
         pictureDialog.show();
     }
-
-
-
 
 
 }

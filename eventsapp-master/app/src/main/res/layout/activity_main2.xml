@@ -35,7 +35,7 @@
             android:layout_alignParentBottom="true"
             android:layout_marginTop="660dp"
             android:background="?android:attr/windowBackground"
-            app:menu="@layout/bottom_navigation" />
+            app:menu="@menu/bottom_navigation" />
     </FrameLayout>
 
 

@@ -17,6 +17,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -41,7 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 // Fragment de recherche des events
-public class ListEventsTabs extends Fragment {
+public class ListEventsTabs extends Fragment{
 
 
     private Context context = null;
@@ -55,6 +57,10 @@ public class ListEventsTabs extends Fragment {
     public static BottomNavigationView bottomNav;
 
     public static Fragment active;
+
+    public static Fragment fav;
+    public static Fragment listEvents;
+    public static Fragment listBookings;
 
 
     @Nullable
@@ -102,6 +108,7 @@ public class ListEventsTabs extends Fragment {
                     case R.id.nav_home:
                         fm.beginTransaction().hide(active).show(fragment1).commit();
                         active = fragment1;
+                        listEvents = fragment1;
                         ft.replace(R.id.fragment_container2, active);
                         ft.commit();
                         return true;
@@ -109,6 +116,7 @@ public class ListEventsTabs extends Fragment {
                     case R.id.nav_favorites:
                         fm.beginTransaction().hide(active).show(fragment2).commit();
                         active = fragment2;
+                        fav = fragment2;
                         ft.replace(R.id.fragment_container2, active);
                         ft.commit();
                         tabLayout.setVisibility(View.INVISIBLE);
@@ -137,6 +145,7 @@ public class ListEventsTabs extends Fragment {
                     case R.id.nav_bookings:
                         fm.beginTransaction().hide(active).show(fragment5).commit();
                         active = fragment5;
+                        listBookings = fragment5;
                         ft.replace(R.id.fragment_container2, active);
                         ft.commit();
                         tabLayout.setVisibility(View.INVISIBLE);
@@ -160,7 +169,6 @@ public class ListEventsTabs extends Fragment {
         return x;
 
     }
-
 
 
     @Override
@@ -349,7 +357,7 @@ public class ListEventsTabs extends Fragment {
 
     }
 
-    class dynamicAdapter extends FragmentPagerAdapter{
+        class dynamicAdapter extends FragmentPagerAdapter{
 
         ArrayList<String> pass_category;
 

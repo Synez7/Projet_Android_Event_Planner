@@ -2,6 +2,7 @@ package rpr.events;
 
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.database.Cursor;
@@ -54,6 +55,7 @@ public class PastEvent extends AppCompatActivity {
     boolean error_load;
     private int category_id;
     RequestQueue queue;
+    public static Context context;
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
@@ -98,6 +100,7 @@ public class PastEvent extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context = PastEvent.this;
         setContentView(R.layout.activity_past_event);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

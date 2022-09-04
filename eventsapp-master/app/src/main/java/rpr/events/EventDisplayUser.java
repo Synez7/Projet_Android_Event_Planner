@@ -1,6 +1,8 @@
 package rpr.events;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +18,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
@@ -28,14 +31,20 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -90,7 +99,6 @@ public class EventDisplayUser extends AppCompatActivity {
     TextView waitConfirm;
     ImageView imgPerson;
     ImageView imgIcon;
-    ImageView confirmBooking;
     Button bookmark;
     Button addcal;
     Button booking;
@@ -99,7 +107,7 @@ public class EventDisplayUser extends AppCompatActivity {
 
     UserSessionManager session;
     private static String user_id;
-    RequestQueue queue;
+    private static String responseBooking;
 
 
     @Override
@@ -203,11 +211,58 @@ public class EventDisplayUser extends AppCompatActivity {
         timetv2.setText(new SimpleDateFormat("hh:mm aa").format(date2));
         organisertv.setText(creator);
 
-        imgIcon.setImageURI(Uri.parse(image));
 
-        InputStream f =  this.getClass().getClassLoader().getResourceAsStream(image);
-        if(f == null){
-            imgIcon.setBackgroundResource(R.drawable.event_people);
+        // CAS où l'image de l'événement est une photo sélectionnée depuis les documents du terminal
+        if(!image.contains("external")) {
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("images/" + image.split("document/")[1] + ".jpg");
+
+            try {
+                final File localFile = File.createTempFile(image.split("document/")[1].split("\\.")[0], "jpg");
+                storageReference.getFile(localFile)
+                        .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                                imgIcon.setImageBitmap(bitmap);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        imgIcon.setBackgroundResource(R.drawable.concert);
+                        Toast.makeText(EventDisplayUser.this, "Firebase : Picture not retrieved !", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // CAS où l'image de l'événement est une photo prise avec l'appareil photo du terminal
+        else{
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("camera/"+image.split("images/media/")[1]+".jpg");
+
+            try {
+                final File localFile = File.createTempFile(image.split("images/media/")[1].split("\\.")[0], "jpg");
+                storageReference.getFile(localFile)
+                        .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                                imgIcon.setImageBitmap(bitmap);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        imgIcon.setBackgroundResource(R.drawable.concert);
+                        Toast.makeText(EventDisplayUser.this, "Firebase : Picture not retrieved !", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         // Si utilisateur connecté est Provider
@@ -280,6 +335,22 @@ public class EventDisplayUser extends AppCompatActivity {
                 cancel.setVisibility(View.GONE);
             }
 
+            if(ListEventsTabs.listEvents != null && ListEventsTabs.listEvents.isVisible()){
+                addcal.setVisibility(View.GONE);
+                waitConfirm.setVisibility(View.GONE);
+                booking.setVisibility(View.VISIBLE);
+                bookmark.setVisibility(View.VISIBLE);
+
+                LinearLayout.LayoutParams ll = (LinearLayout.LayoutParams)booking.getLayoutParams();
+                ll.setMargins(130, 20, 12, 26);
+                booking.setHeight(90);
+                booking.setLayoutParams(ll);
+
+
+                confirm.setVisibility(View.GONE);
+                cancel.setVisibility(View.GONE);
+            }
+
 
             // Dans le fragment de consultation des réservations
             // un User voit le descriptif de l'event reservé +
@@ -295,15 +366,27 @@ public class EventDisplayUser extends AppCompatActivity {
                 booking.setVisibility(View.GONE);
                 bookmark.setVisibility(View.GONE);
 
+                confirm.setVisibility(View.GONE);
+                cancel.setVisibility(View.GONE);
+
+            }
+
+            if(ListEventsTabs.listBookings != null && ListEventsTabs.listBookings.isVisible()){
+
+                participanttv.setText("Participant : " + nameParticpant);
+                waitConfirm.setText("( Waiting for confirmation )");
+                participanttv.setVisibility(View.VISIBLE);
+
+                addcal.setVisibility(View.GONE);
+                booking.setVisibility(View.GONE);
+                bookmark.setVisibility(View.GONE);
 
                 confirm.setVisibility(View.GONE);
                 cancel.setVisibility(View.GONE);
 
-
-
             }
 
-            // Dans le fragement des évents favoris
+            // Dans le fragement des events favoris
             // un User peut enlever un event de ses events favoris
             if(Navigation.f3 != null && Navigation.f3.isVisible()){
 
@@ -314,15 +397,27 @@ public class EventDisplayUser extends AppCompatActivity {
                 addcal.setVisibility(View.GONE);
                 booking.setVisibility(View.GONE);
                 waitConfirm.setVisibility(View.GONE);
+                LinearLayout.LayoutParams ll = (LinearLayout.LayoutParams)bookmark.getLayoutParams();
+                bookmark.setWidth(300);
+                ll.setMargins(350, 20, 12, 10);
+                bookmark.setHeight(90);
+                bookmark.setLayoutParams(ll);
+            }
 
+            if(ListEventsTabs.fav != null && ListEventsTabs.fav.isVisible()){
+                System.out.println("FAVORITES 2");
+                participanttv.setVisibility(View.GONE);
+                imgPerson.setVisibility(View.GONE);
+                bookmark.setVisibility(View.VISIBLE);
+                addcal.setVisibility(View.GONE);
+                booking.setVisibility(View.GONE);
+                waitConfirm.setVisibility(View.GONE);
                 LinearLayout.LayoutParams ll = (LinearLayout.LayoutParams)bookmark.getLayoutParams();
                 ll.setMargins(350, 20, 12, 10);
                 bookmark.setHeight(90);
                 bookmark.setLayoutParams(ll);
-
-
-
             }
+
 
 
 
@@ -330,7 +425,7 @@ public class EventDisplayUser extends AppCompatActivity {
 
         // Si la réservation faite par un User est confirmée
         // Un check vert s'ajoute en bas de la carte de l'event reservé
-        if(confirmBook == 1 ){
+        if(confirmBook == 1){
             confirm.setVisibility(View.GONE);
             cancel.setVisibility(View.GONE);
             imgPerson.setVisibility(View.GONE);
@@ -343,6 +438,32 @@ public class EventDisplayUser extends AppCompatActivity {
             LinearLayout.LayoutParams ll = (LinearLayout.LayoutParams)addcal.getLayoutParams();
             ll.setMargins(340, 20, 180, 10);
             addcal.setText("Add to my calendar");
+
+            // Plus possible d'ajouter une réservation confirmée à son agenda une fois
+            // que le date de fin de l'événement concerné soit antérieure à la date courante
+            try {
+                Calendar c = Calendar.getInstance();
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                String dateInString = c.get(Calendar.YEAR) + "-" + (c.get(Calendar.MONTH) + 1) + "-" + c.get(Calendar.DAY_OF_MONTH);
+                Date dateee = formatter.parse(time_end);
+                Date currentDate = formatter.parse(dateInString);
+                formatter = new SimpleDateFormat("yyyy-MM-dd");
+                String myDate = formatter.format(dateee).toString();
+                String myDate2 = formatter.format(currentDate).toString();
+                System.out.println("MY DATE MAN : " + myDate);
+                System.out.println("CURRENT DATE MAN : " + myDate2);
+
+                boolean isAfter = formatter.parse(myDate2).after(formatter.parse(myDate));
+                if(isAfter){
+                    addcal.setVisibility(View.INVISIBLE);
+                }
+
+
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+
         }
 
         // Quand un Provider confirme une réservation (place déjà réservée)
@@ -361,6 +482,15 @@ public class EventDisplayUser extends AppCompatActivity {
             participanttv.setText("Confirmed : " + confirmDate);
             addcal.setVisibility(View.GONE);
             waitConfirm.setVisibility(View.GONE);
+        }
+
+        if(PastEvent.context != null){
+            confirm.setVisibility(View.GONE);
+            cancel.setVisibility(View.GONE);
+            imgPerson.setVisibility(View.GONE);
+            bookmark.setVisibility(View.GONE);
+            addcal.setVisibility(View.GONE);
+            booking.setVisibility(View.GONE);
         }
 
 
@@ -418,15 +548,19 @@ public class EventDisplayUser extends AppCompatActivity {
 
             }
         });
-
         // Action de réserver un event
         booking.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(booking.getText().equals("Book")){
+                toggleBooking();
+                if(booking.getText().equals("Book") && attendance >= 1 && responseBooking == null){
                     Snackbar.make(view,"Event " + name + " added to your bookings",Snackbar.LENGTH_SHORT).show();
                 }
-                toggleBooking();
+
+                if(attendance == 0){
+                    Snackbar.make(view,"Event " + name + " cannot be booked (0 persons invited)",Snackbar.LENGTH_SHORT).show();
+                }
+
             }
         });
 
@@ -621,6 +755,12 @@ public class EventDisplayUser extends AppCompatActivity {
                     {
 
                         try{
+                            System.out.println("Réponse : " + response.split("\\{")[0]);
+                            responseBooking = response.split("\\{")[0];
+                            if(responseBooking.contains("No more")){
+                                Toast.makeText(EventDisplayUser.this,"No more places for a booking !",Toast.LENGTH_SHORT).show();
+                            }
+                            booking.setEnabled(true);
                             JSONObject jsonResponse = new JSONObject(response);
                             boolean success = jsonResponse.getBoolean("success");
 
@@ -761,6 +901,5 @@ public class EventDisplayUser extends AppCompatActivity {
         RequestQueue queue4 = Volley.newRequestQueue(getApplicationContext());
         queue4.add(togglebookingRequest);
     }
-
 
 }

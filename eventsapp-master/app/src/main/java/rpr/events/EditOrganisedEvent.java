@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
@@ -22,7 +22,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -33,12 +33,19 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -69,10 +76,8 @@ public class EditOrganisedEvent extends AppCompatActivity {
     private TextView txtPrice;
     private TextView txtAttendance;
 
-    Button btnSelectImage;
     ImageView img;
 
-    private static Uri imgPath;
 
     private Spinner categorySpinner;
 
@@ -96,8 +101,9 @@ public class EditOrganisedEvent extends AppCompatActivity {
     private static boolean isClickedImage;
 
 
-    String ImageTag = "image_tag" ;
-    String ImageName = "image_data" ;
+    StorageReference storageReference;
+    public static String pathNewImage;
+
 
     private static String user_id;
     RequestQueue queue;
@@ -158,7 +164,65 @@ public class EditOrganisedEvent extends AppCompatActivity {
 
         img = (ImageView) findViewById(R.id.imageView);
 
-        img.setImageURI(Uri.parse(image));
+        //img.setImageURI(Uri.parse(image));
+        System.out.println("IMAGE PATH MON POTE : " + image);
+
+        // CAS où l'image de l'événement est une photo sélectionnée depuis les documents du terminal
+        if(!image.contains("external")) {
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("images/" + image.split("document/")[1] + ".jpg");
+
+            try {
+                final File localFile = File.createTempFile(image.split("document/")[1].split("\\.")[0], "jpg");
+                storageReference.getFile(localFile)
+                        .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                                img.setImageBitmap(bitmap);
+                                System.out.println("PATH DE MON BITMAP : " + localFile.getPath());
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        img.setBackgroundResource(R.drawable.concert);
+                        Toast.makeText(EditOrganisedEvent.this, "Firebase : Picture not retrieved !", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // CAS où l'image de l'événement est une photo prise avec l'appareil photo du terminal
+        else{
+            StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("camera/"+image.split("images/media/")[1]+".jpg");
+
+            try {
+                final File localFile = File.createTempFile(image.split("images/media/")[1].split("\\.")[0], "jpg");
+                storageReference.getFile(localFile)
+                        .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                Bitmap bitmap = BitmapFactory.decodeFile(localFile.getAbsolutePath());
+                                img.setImageBitmap(bitmap);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        img.setBackgroundResource(R.drawable.concert);
+                        Toast.makeText(EditOrganisedEvent.this, "Firebase : Picture not retrieved !", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+
 
         txtName.setText(name);
         txtVenue.setText(venue);
@@ -558,7 +622,7 @@ public class EditOrganisedEvent extends AppCompatActivity {
                     image = oldPic;
                 }
                 else{
-                    image = t;
+                    image = pathNewImage;
                 }
 
 
@@ -599,16 +663,11 @@ public class EditOrganisedEvent extends AppCompatActivity {
 
                                         if (success) {
 
-
                                             Toast.makeText(context, "Event " + name + " was updated Successfully ", Toast.LENGTH_SHORT).show();
-
                                             onBackPressed();
 
-
                                         } else {
-
                                             Toast.makeText(context, "Event update Failed", Toast.LENGTH_SHORT).show();
-
                                         }
                                     }catch (JSONException e) {
                                         e.printStackTrace();
@@ -656,10 +715,6 @@ public class EditOrganisedEvent extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-
-
-
-
                     StringRequest registerRequest = new StringRequest(Request.Method.POST, "https://eventplannerapp.000webhostapp.com/deleteEvent.php",
                             new Response.Listener<String>()
                             {
@@ -669,6 +724,7 @@ public class EditOrganisedEvent extends AppCompatActivity {
 
                                     try{
 
+                                        System.out.println("REPONSE DELETE : " + response);
                                         JSONObject jsonResponse = new JSONObject(response);
                                         boolean success = jsonResponse.getBoolean("success");
 
@@ -789,10 +845,22 @@ public class EditOrganisedEvent extends AppCompatActivity {
                 }
 
                 String imgPath = contentURI.toString();
-                t = imgPath;
-                String t = imgPath;
+                pathNewImage = imgPath;
+                System.out.println("PATH MY IMAGE : " + imgPath);
                 img.setImageBitmap(Bitmap.createScaledBitmap(bitmap, 160, 160, false));
+                storageReference = FirebaseStorage.getInstance().getReference("images/"+contentURI.toString().split("document/")[1]+".jpg");
+                storageReference.putFile(contentURI).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
 
+                        Toast.makeText(EditOrganisedEvent.this,"Firebase : Uploading successful !",Toast.LENGTH_SHORT).show();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(EditOrganisedEvent.this,"Firebase : Uploading failure !",Toast.LENGTH_SHORT).show();
+                    }
+                });
 
             }
 
@@ -800,6 +868,19 @@ public class EditOrganisedEvent extends AppCompatActivity {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
             String path = MediaStore.Images.Media.insertImage(this.getContentResolver(), imageBitmap, "title", null);
+            storageReference = FirebaseStorage.getInstance().getReference("camera/"+path.split("images/media/")[1]+".jpg");
+            storageReference.putFile(Uri.parse(path)).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                    Toast.makeText(EditOrganisedEvent.this,"Firebase : Uploading successful !",Toast.LENGTH_SHORT).show();
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(EditOrganisedEvent.this,"Firebase : Uploading failure !",Toast.LENGTH_SHORT).show();
+                }
+            });
             t = path;
             String t = path;
             img.setImageBitmap(Bitmap.createScaledBitmap(imageBitmap, 160, 160, false));
@@ -807,59 +888,8 @@ public class EditOrganisedEvent extends AppCompatActivity {
     }
 
 
-
-
-
-
-    // Upload d'image pour stocker le path dans une base de données MYSQL
-    public void UploadImageToServer(){
-
-
-        class AsyncTaskUploadClass extends AsyncTask<Void,Void,String> {
-
-            @Override
-            protected void onPreExecute() {
-
-                super.onPreExecute();
-
-                //Toast.makeText(EditOrganisedEvent.this,"Image is Uploading Please Wait",Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            protected void onPostExecute(String string1) {
-
-                super.onPostExecute(string1);
-
-                //progressDialog.dismiss();
-
-                Toast.makeText(EditOrganisedEvent.this,string1,Toast.LENGTH_LONG).show();
-
-            }
-
-            @Override
-            protected String doInBackground(Void... params) {
-
-                ImageProcessClass imageProcessClass = new ImageProcessClass();
-
-                HashMap<String,String> HashMapParams = new HashMap<String,String>();
-
-
-
-                HashMapParams.put(ImageTag, t);
-
-                HashMapParams.put(ImageName, t);
-
-                String FinalData = imageProcessClass.ImageHttpRequest("https://eventplannerapp.000webhostapp.com/upload-image-to-server.php", HashMapParams);
-
-                return FinalData;
-            }
-        }
-        AsyncTaskUploadClass AsyncTaskUploadClassOBJ = new AsyncTaskUploadClass();
-        AsyncTaskUploadClassOBJ.execute();
-    }
-
-    public void choosePhotoFromGallary() {
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK,
+    public void choosePhotoFromGallery() {
+        Intent galleryIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
         startActivityForResult(galleryIntent, 1);
@@ -882,7 +912,7 @@ public class EditOrganisedEvent extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case 0:
-                                choosePhotoFromGallary();
+                                choosePhotoFromGallery();
                                 break;
                             case 1:
                                 takePhotoFromCamera();

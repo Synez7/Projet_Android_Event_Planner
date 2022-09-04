@@ -48,9 +48,7 @@
                     android:id="@+id/imgIcon"
                     android:layout_width="match_parent"
                     android:layout_height="143dp"
-                    android:scaleType="centerCrop"
-                    android:foreground="@drawable/corner_pic"
-                    android:src="@mipmap/ic_launcher">
+                    android:scaleType="centerCrop">
 
                 </ImageView>
 

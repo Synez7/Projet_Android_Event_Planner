@@ -36,8 +36,6 @@ public class eventAdapter extends RecyclerView.Adapter<eventAdapter.ViewHolder> 
         this.organise = organise;
     }
 
-
-
     public eventAdapter(Context context, List<eventItem> event_data, boolean organise) {
         this(context,event_data);
         this.organise = organise;

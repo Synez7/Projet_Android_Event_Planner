@@ -7,7 +7,9 @@ import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -74,11 +76,7 @@ public class SignupFragment extends Fragment {
                     Snackbar.make(view, "Please input an email address with a correct format !", Snackbar.LENGTH_SHORT).show();
                 }else {
 
-
                     final int usertype_id = typeUser.getSelectedItemPosition()+1;
-
-
-
 
                     StringRequest signupRequest = new StringRequest(Request.Method.POST, "https://eventplannerapp.000webhostapp.com/Test.php", new Response.Listener<String>() {
                             @Override
@@ -131,9 +129,6 @@ public class SignupFragment extends Fragment {
         return root;
     }
 
-
-
-
     private void getusertype(){
 
         StringRequest usertypeRequest = new StringRequest(Request.Method.GET, "https://eventplannerapp.000webhostapp.com/usertypeRegister2.php",
@@ -175,6 +170,8 @@ public class SignupFragment extends Fragment {
         r.add(usertypeRequest);
 
     }
+
+
 
     public boolean isValidEmail(CharSequence target) {
         return (!TextUtils.isEmpty(target) && Patterns.EMAIL_ADDRESS.matcher(target).matches());
