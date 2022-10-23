@@ -1,6 +1,10 @@
 # Projet_Android_Event_Planner
 
-<img align="center" alt="EventPlanner_LOGO" width="150" src="https://github.com/Synez7/Projet_Android_Event_Planner/blob/main/eventsapp-master/app/src/main/res/mipmap-hdpi/ic_launcher_eventplanner.png">
+
+<p align="center"> 
+  <img align="center" alt="EventPlanner_LOGO" width="150" src="https://github.com/Synez7/Projet_Android_Event_Planner/blob/main/eventsapp-master/app/src/main/res/mipmap-hdpi/ic_launcher_eventplanner.png">
+</p>
+
 
 ## Guide de lancement
 
