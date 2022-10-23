@@ -2,7 +2,7 @@
 
 <img align="right" alt="EventPlanner_LOGO" width="150" src="https://github.com/Synez7/Projet_Android_Event_Planner/blob/main/eventsapp-master/app/src/main/res/mipmap-hdpi/ic_launcher_eventplanner.png">
 
-<ins>Guide de lancement :</ins>
+## Guide de lancement
 
 1 - Téléchargez l'archive zip à cette adresse courante 
 
